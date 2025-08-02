@@ -1,10 +1,12 @@
 <template>
   <div id="app">
+    <HeaderNav />
     <MoviePage />
   </div>
 </template>
 
 <script setup lang="ts">
+import HeaderNav from './components/HeaderNav.vue'
 import MoviePage from './components/MoviePage.vue'
 </script>
 
