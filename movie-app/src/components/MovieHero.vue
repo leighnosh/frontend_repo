@@ -45,7 +45,7 @@
                 </div>
               </div>
               <span class="score-label">
-                {{ userRating > 0 ? 'Your<br>Rating' : 'User<br>Score' }}
+                <span v-html="userRating > 0 ? 'Your<br>Rating' : 'User<br>Score'"></span>
               </span>
               <button v-if="userRating === 0" class="rate-button" @click="openRatingModal">
                 Click to Rate
