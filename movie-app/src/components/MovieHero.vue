@@ -21,7 +21,7 @@
           
           <div class="actions-row">
             <div class="user-score">
-              <div class="score-circle">
+              <div class="score-circle clickable" @click="openRatingModal" :class="{ 'has-user-rating': userRating > 0 }">
                 <div class="score-outer-ring">
                   <svg class="score-ring" viewBox="0 0 36 36">
                     <path
@@ -32,19 +32,24 @@
                     />
                     <path
                       class="score-fill"
-                      :stroke-dasharray="`${userScore}, 100`"
+                      :stroke-dasharray="`${displayScore}, 100`"
                       d="M18 2.0845
                         a 15.9155 15.9155 0 0 1 0 31.831
                         a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                   </svg>
                   <div class="score-text">
-                    <span class="score-number">{{ userScore }}</span>
+                    <span class="score-number">{{ displayScore }}</span>
                     <span class="score-percent">%</span>
                   </div>
                 </div>
               </div>
-              <span class="score-label">User<br>Score</span>
+              <span class="score-label">
+                {{ userRating > 0 ? 'Your<br>Rating' : 'User<br>Score' }}
+              </span>
+              <button v-if="userRating === 0" class="rate-button" @click="openRatingModal">
+                Click to Rate
+              </button>
             </div>
             
             <div class="action-buttons">
@@ -60,7 +65,7 @@
               <button class="action-btn star-btn" title="Rate it">
                 <span class="btn-icon">☆</span>
               </button>
-              <button class="play-trailer">
+              <button class="play-trailer" @click="openTrailerModal">
                 <span class="play-icon">▶</span>
                 Play Trailer
               </button>
@@ -85,11 +90,40 @@
         </div>
       </div>
     </div>
+    
+    <!-- Rating Modal -->
+    <div v-if="showRatingModal" class="modal-overlay" @click="closeRatingModal">
+      <div class="rating-modal" @click.stop>
+        <h3>Rate Guardians of the Galaxy Vol. 2</h3>
+        <div class="rating-stars">
+          <button 
+            v-for="star in 10" 
+            :key="star"
+            class="star-btn"
+            :class="{ active: star <= hoveredRating || star <= selectedRating }"
+            @click="selectRating(star)"
+            @mouseenter="hoveredRating = star"
+            @mouseleave="hoveredRating = 0"
+          >
+            ★
+          </button>
+        </div>
+        <div class="rating-display">
+          {{ hoveredRating || selectedRating || 0 }}/10
+        </div>
+        <div class="modal-actions">
+          <button class="cancel-btn" @click="closeRatingModal">Cancel</button>
+          <button class="submit-btn" @click="submitRating" :disabled="selectedRating === 0">
+            Rate Movie
+          </button>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import type { MovieData } from '../types/movie'
 import { convertToUserScore, formatRuntime } from '../services/movieApi'
 
@@ -99,8 +133,49 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const userScore = computed(() => convertToUserScore(props.movieData.imdbRating))
+// Rating state
+const userRating = ref(0)
+const showRatingModal = ref(false)
+const selectedRating = ref(0)
+const hoveredRating = ref(0)
 
+// Computed properties
+const userScore = computed(() => convertToUserScore(props.movieData.imdbRating))
+const displayScore = computed(() => {
+  return userRating.value > 0 ? userRating.value * 10 : userScore.value
+})
+
+// Load user rating from localStorage on mount
+onMounted(() => {
+  const savedRating = localStorage.getItem(`rating-${props.movieData.imdbID}`)
+  if (savedRating) {
+    userRating.value = parseInt(savedRating)
+  }
+})
+
+// Rating functions
+function openRatingModal() {
+  showRatingModal.value = true
+  selectedRating.value = userRating.value
+}
+
+function closeRatingModal() {
+  showRatingModal.value = false
+  selectedRating.value = 0
+  hoveredRating.value = 0
+}
+
+function selectRating(rating: number) {
+  selectedRating.value = rating
+}
+
+function submitRating() {
+  userRating.value = selectedRating.value
+  localStorage.setItem(`rating-${props.movieData.imdbID}`, selectedRating.value.toString())
+  closeRatingModal()
+}
+
+// Utility functions
 function formatDate(dateString: string): string {
   const date = new Date(dateString)
   return date.toLocaleDateString('en-US', { 
@@ -210,6 +285,23 @@ function getDirector(directors: string): string {
 
 .score-circle {
   position: relative;
+}
+
+.score-circle.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.score-circle.clickable:hover {
+  transform: scale(1.05);
+}
+
+.score-circle.has-user-rating .score-outer-ring {
+  border-color: #f39c12;
+}
+
+.score-circle.has-user-rating .score-fill {
+  stroke: #f39c12;
 }
 
 .score-outer-ring {
@@ -375,6 +467,121 @@ function getDirector(directors: string): string {
   opacity: 0.8;
 }
 
+.rate-button {
+  background: none;
+  border: 1px solid #01b4e4;
+  color: #01b4e4;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rate-button:hover {
+  background: #01b4e4;
+  color: white;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.rating-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.rating-modal h3 {
+  color: #333;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+}
+
+.rating-stars {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #ddd;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.star-btn:hover {
+  transform: scale(1.1);
+}
+
+.star-btn.active {
+  color: #f39c12;
+}
+
+.rating-display {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.cancel-btn, .submit-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.cancel-btn:hover {
+  background: #e0e0e0;
+}
+
+.submit-btn {
+  background: #01b4e4;
+  color: white;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #0190c7;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .hero-container {
     flex-direction: column;
@@ -398,6 +605,19 @@ function getDirector(directors: string): string {
   .action-buttons {
     flex-wrap: wrap;
     justify-content: center;
+  }
+  
+  .rating-modal {
+    padding: 1.5rem;
+    width: 95%;
+  }
+  
+  .star-btn {
+    font-size: 1.5rem;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
   }
 }
 </style>
