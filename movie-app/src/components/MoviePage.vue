@@ -16,19 +16,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { MovieData } from '../types/movie'
-import { fetchMovieData, convertToUserScore } from '../services/movieApi'
+import { fetchMovieData } from '../services/movieApi'
 import MovieHero from './MovieHero.vue'
 import CastCrew from './CastCrew.vue'
 
 const movieData = ref<MovieData | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
-
-const userScore = computed(() => {
-  return movieData.value ? convertToUserScore(movieData.value.imdbRating) : 0
-})
 
 onMounted(async () => {
   try {
@@ -43,12 +39,12 @@ onMounted(async () => {
 
 <style scoped>
 .movie-page {
-  padding: 2rem;
-  text-align: center;
+  min-height: 100vh;
 }
 
-h1 {
-  color: #01b4e4;
-  margin-bottom: 1rem;
+.loading, .error {
+  padding: 2rem;
+  text-align: center;
+  color: white;
 }
 </style>
