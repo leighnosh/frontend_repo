@@ -119,6 +119,24 @@
         </div>
       </div>
     </div>
+    
+    <!-- Trailer Modal -->
+    <div v-if="showTrailerModal" class="modal-overlay" @click="closeTrailerModal">
+      <div class="trailer-modal" @click.stop>
+        <button class="close-trailer" @click="closeTrailerModal">✕</button>
+        <div class="trailer-container">
+          <iframe
+            width="100%" 
+            height="100%"
+            src="https://www.youtube.com/embed/dW1BIid8Osg?autoplay=1&rel=0"
+            title="Guardians of the Galaxy Vol. 2 - Official Trailer"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -138,6 +156,9 @@ const userRating = ref(0)
 const showRatingModal = ref(false)
 const selectedRating = ref(0)
 const hoveredRating = ref(0)
+
+// Trailer state
+const showTrailerModal = ref(false)
 
 // Computed properties
 const userScore = computed(() => convertToUserScore(props.movieData.imdbRating))
@@ -173,6 +194,15 @@ function submitRating() {
   userRating.value = selectedRating.value
   localStorage.setItem(`rating-${props.movieData.imdbID}`, selectedRating.value.toString())
   closeRatingModal()
+}
+
+// Trailer functions
+function openTrailerModal() {
+  showTrailerModal.value = true
+}
+
+function closeTrailerModal() {
+  showTrailerModal.value = false
 }
 
 // Utility functions
@@ -582,6 +612,44 @@ function getDirector(directors: string): string {
   cursor: not-allowed;
 }
 
+/* Trailer Modal Styles */
+.trailer-modal {
+  position: relative;
+  background: black;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 900px;
+  width: 90%;
+  aspect-ratio: 16/9;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.close-trailer {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.close-trailer:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.trailer-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
 @media (max-width: 768px) {
   .hero-container {
     flex-direction: column;
@@ -618,6 +686,17 @@ function getDirector(directors: string): string {
   
   .modal-actions {
     flex-direction: column;
+  }
+  
+  .trailer-modal {
+    width: 95%;
+    max-width: none;
+  }
+  
+  .close-trailer {
+    width: 35px;
+    height: 35px;
+    font-size: 1rem;
   }
 }
 </style>
