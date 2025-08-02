@@ -1,0 +1,7 @@
+layout/
+themoviedb/
+CLAUDE.md
+README.md
+
+movie-app/node_modules/
+package-lock.json
